@@ -5,9 +5,40 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FileSync"
         mc:Ignorable="d"
-        Title="MainWindow" Height="300" Width="314">
-    <Grid>
-        <TextBlock x:Name="loginText" >Not Logged In</TextBlock>
-        <Button Height="20px" Width="40px" Click="Button_Click">Test</Button>
+        Title="MainWindow" Height="381" Width="313"
+        WindowStyle="None"
+        ResizeMode="NoResize">
+    <Grid Background="#383838">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="40"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.ColumnSpan="3" Background="Black">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <TextBlock VerticalAlignment="Center" Grid.Column="1" Grid.ColumnSpan="2" x:Name="loginText" Foreground="White">File Sync</TextBlock>
+        </Grid>
+        <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" HorizontalAlignment="Center" FontSize="20" Foreground="White"  Text="{Binding DisplayText}"></TextBlock>
+        <Button Grid.Row="3" Grid.ColumnSpan="3" Height="40" Width="120" Background="Gray" Foreground="White" Click="SignIn">Sign in with Azure</Button>
     </Grid>
 </Window>

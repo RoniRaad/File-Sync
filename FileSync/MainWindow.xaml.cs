@@ -29,6 +29,8 @@ namespace FileSync
         private static readonly string TodoListScope = ConfigurationManager.AppSettings["todo:TodoListScope"];
         private static readonly string TodoListBaseAddress = ConfigurationManager.AppSettings["todo:TodoListBaseAddress"];
         private static readonly string[] Scopes = { TodoListScope };
+        private LoginViewModel viewModel = new LoginViewModel();
+
 
         private bool IsLoggedIn = false;
         public MainWindow()
@@ -40,20 +42,8 @@ namespace FileSync
                 .Build();
 
             TokenCacheHelper.EnableSerialization(_app.UserTokenCache);
-        }
 
-        public async void SignOut()
-        {
-            var accounts = (await _app.GetAccountsAsync()).ToList();
-
-            // Clears the library cache. Does not affect the browser cookies.
-            while (accounts.Any())
-            {
-                await _app.RemoveAsync(accounts.First());
-                accounts = (await _app.GetAccountsAsync()).ToList();
-            }
-
-            return;
+            this.DataContext = viewModel;
         }
 
         public async void SignIn()
@@ -67,6 +57,7 @@ namespace FileSync
                     var result = await _app.AcquireTokenSilent(Scopes, accounts.FirstOrDefault())
                         .ExecuteAsync()
                         .ConfigureAwait(false);
+                    ((LoginViewModel)this.DataContext).DisplayText = $"Hello {result.Account.Username}!";
 
                     Dispatcher.Invoke(() =>
                     {
@@ -96,10 +87,12 @@ namespace FileSync
                         }
 
                         var result = await builder.ExecuteAsync().ConfigureAwait(false);
+                        ((LoginViewModel)this.DataContext).DisplayText = $"Hello {result.Account.Username}!";
 
                         Dispatcher.Invoke(() =>
                         {
-                            loginText.Text = "Logged In";
+                            ((LoginViewModel)this.DataContext).DisplayText = $"Hello {result.Account.Username}!";
+
                             //SignInButton.Content = ClearCacheString;
                             //SetUserName(result.Account);
                             //GetTodoList();
@@ -132,14 +125,33 @@ namespace FileSync
                 }
             }
         }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void SignIn(object sender, RoutedEventArgs e)
         {
+            if (viewModel.DisplayText == "You're not signed in!")
                 SignIn();
-
+            else
+                SignOut();
 
             IsLoggedIn = !IsLoggedIn;
         }
 
+        private async void SignOut()
+        {
+            var accounts = (await _app.GetAccountsAsync()).ToList();
+            // Clears the library cache. Does not affect the browser cookies.
+            while (accounts.Any())
+            {
+                await _app.RemoveAsync(accounts.First());
+                accounts = (await _app.GetAccountsAsync()).ToList();
+            }
+
+            viewModel.DisplayText = "You're not signed in!";
+            return;
+        }
+
+        public class LoginViewModel
+        {
+            public string DisplayText { get; set; } = "You're not signed in!";
+        }
     }
 }
