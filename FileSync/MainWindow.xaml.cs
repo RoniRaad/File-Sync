@@ -1,5 +1,6 @@
 ﻿using Microsoft.Identity.Client;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Configuration;
 using System.Diagnostics;
 using System.Globalization;
@@ -43,7 +44,8 @@ namespace FileSync
 
             TokenCacheHelper.EnableSerialization(_app.UserTokenCache);
 
-            this.DataContext = viewModel;
+            DataContext = viewModel;
+            viewModel.DisplayText = "You're not signed in!";
         }
 
         public async void SignIn()
@@ -57,11 +59,11 @@ namespace FileSync
                     var result = await _app.AcquireTokenSilent(Scopes, accounts.FirstOrDefault())
                         .ExecuteAsync()
                         .ConfigureAwait(false);
-                    ((LoginViewModel)this.DataContext).DisplayText = $"Hello {result.Account.Username}!";
 
                     Dispatcher.Invoke(() =>
                     {
-                        loginText.Text = result.Account.Username;
+                        viewModel.DisplayText = $"Hello {result.Account.Username}!";
+                        //loginText.Text = result.Account.Username;
                         //SignInButton.Content = ClearCacheString;
                         //SetUserName(result.Account);
                         //GetTodoList();
@@ -83,15 +85,14 @@ namespace FileSync
                             // You app should install the embedded browser WebView2 https://aka.ms/msal-net-webview2
                             // but if for some reason this is not possible, you can fall back to the system browser 
                             // in this case, the redirect uri needs to be set to "http://localhost"
-                           // builder = builder.WithUseEmbeddedWebView(false);
+                            builder = builder.WithUseEmbeddedWebView(false);
                         }
 
                         var result = await builder.ExecuteAsync().ConfigureAwait(false);
-                        ((LoginViewModel)this.DataContext).DisplayText = $"Hello {result.Account.Username}!";
 
                         Dispatcher.Invoke(() =>
                         {
-                            ((LoginViewModel)this.DataContext).DisplayText = $"Hello {result.Account.Username}!";
+                            viewModel.DisplayText = $"Hello {result.Account.Username}!";
 
                             //SignInButton.Content = ClearCacheString;
                             //SetUserName(result.Account);
@@ -131,8 +132,6 @@ namespace FileSync
                 SignIn();
             else
                 SignOut();
-
-            IsLoggedIn = !IsLoggedIn;
         }
 
         private async void SignOut()
@@ -149,9 +148,27 @@ namespace FileSync
             return;
         }
 
-        public class LoginViewModel
+        public class LoginViewModel : INotifyPropertyChanged
         {
-            public string DisplayText { get; set; } = "You're not signed in!";
+            private string _displayText;
+            public string DisplayText
+            {
+                get { return _displayText; }
+                set
+                {
+                    if (_displayText == value)
+                        return;
+                    _displayText = value;
+                    NotifyPropertyChanged(nameof(DisplayText));
+                }
+            }
+
+            public event PropertyChangedEventHandler PropertyChanged;
+            protected void NotifyPropertyChanged(string propertyName)
+            {
+                if (PropertyChanged != null)
+                    PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
         }
     }
 }
