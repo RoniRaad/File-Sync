@@ -9,7 +9,7 @@ namespace FileSync
 {
     static class TokenCacheHelper
     { 
-        /// <summary>
+        /// <summary>j
         /// Path to the token cache
         /// </summary>
         private static readonly string CacheFilePath = System.Reflection.Assembly.GetExecutingAssembly().Location + ".msalcache.bin";

@@ -1,6 +1,5 @@
 ﻿using Microsoft.Identity.Client;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Configuration;
 using System.Diagnostics;
 using System.Globalization;
@@ -23,19 +22,22 @@ namespace FileSync
     public partial class MainWindow : Window
     {
         private readonly IPublicClientApplication _app;
+        private readonly FileManager _fileManagerWindow;
         private static readonly string AadInstance = ConfigurationManager.AppSettings["ida:AADInstance"];
         private static readonly string Tenant = ConfigurationManager.AppSettings["ida:Tenant"];
         private static readonly string ClientId = ConfigurationManager.AppSettings["ida:ClientId"];
         private static readonly string Authority = string.Format(CultureInfo.InvariantCulture, AadInstance, Tenant);
-        private static readonly string TodoListScope = ConfigurationManager.AppSettings["todo:TodoListScope"];
-        private static readonly string TodoListBaseAddress = ConfigurationManager.AppSettings["todo:TodoListBaseAddress"];
+        private static readonly string TodoListScope = ConfigurationManager.AppSettings["todo:FileSyncScope"];
+        private static readonly string TodoListBaseAddress = ConfigurationManager.AppSettings["todo:FileSyncBaseAddress"];
         private static readonly string[] Scopes = { TodoListScope };
         private LoginViewModel viewModel = new LoginViewModel();
 
 
         private bool IsLoggedIn = false;
-        public MainWindow()
+        public MainWindow(FileManager fileManagerWindow)
         {
+            _fileManagerWindow = fileManagerWindow;
+
             InitializeComponent();
             _app = PublicClientApplicationBuilder.Create(ClientId)
                 .WithAuthority(Authority)
@@ -46,6 +48,7 @@ namespace FileSync
 
             DataContext = viewModel;
             viewModel.DisplayText = "You're not signed in!";
+
         }
 
         public async void SignIn()
@@ -63,6 +66,8 @@ namespace FileSync
                     Dispatcher.Invoke(() =>
                     {
                         viewModel.DisplayText = $"Hello {result.Account.Username}!";
+                        _fileManagerWindow.Show();
+                        Close();
                         //loginText.Text = result.Account.Username;
                         //SignInButton.Content = ClearCacheString;
                         //SetUserName(result.Account);
@@ -94,6 +99,8 @@ namespace FileSync
                         {
                             viewModel.DisplayText = $"Hello {result.Account.Username}!";
 
+                            _fileManagerWindow.Show();
+                            Close();
                             //SignInButton.Content = ClearCacheString;
                             //SetUserName(result.Account);
                             //GetTodoList();
@@ -146,29 +153,6 @@ namespace FileSync
 
             viewModel.DisplayText = "You're not signed in!";
             return;
-        }
-
-        public class LoginViewModel : INotifyPropertyChanged
-        {
-            private string _displayText;
-            public string DisplayText
-            {
-                get { return _displayText; }
-                set
-                {
-                    if (_displayText == value)
-                        return;
-                    _displayText = value;
-                    NotifyPropertyChanged(nameof(DisplayText));
-                }
-            }
-
-            public event PropertyChangedEventHandler PropertyChanged;
-            protected void NotifyPropertyChanged(string propertyName)
-            {
-                if (PropertyChanged != null)
-                    PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-            }
         }
     }
 }
