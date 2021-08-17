@@ -9,5 +9,6 @@ namespace FileSync.Infrastructure.Services
         Task<string> GetAccessToken();
         Task SignIn();
         Task<bool> TrySilentSignIn();
+        public Task SignOut();
     }
 }

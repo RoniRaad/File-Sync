@@ -34,8 +34,8 @@ namespace FileSync
             services.AddTransient<IIOService, IOService>();
             services.AddTransient<IFileManagerViewModel, FileManagerViewModel>();
             services.AddTransient<ILoginViewModel, LoginViewModel>();
+            services.AddSingleton<IAuthorizationService, AzureADService>();
             services.AddSingleton<MainWindow>();
-            services.AddSingleton<AzureADService>();
             services.AddSingleton<FileManager>();
         }
 
@@ -43,9 +43,9 @@ namespace FileSync
         {
             await _host.StartAsync();
 
-            var azureAdService = _host.Services.GetService<AzureADService>();
-            var successfulSilentSignIn = await azureAdService.TrySilentSignIn();
             Window startingWindow;
+            var azureAdService = _host.Services.GetService<IAuthorizationService>();
+            var successfulSilentSignIn = await azureAdService.TrySilentSignIn();
 
             if (!successfulSilentSignIn)
                 startingWindow = _host.Services.GetRequiredService<MainWindow>();

@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text.Json;
 
 namespace FileSync
 {
@@ -11,7 +9,8 @@ namespace FileSync
     /// 
     public class IOService : IIOService
     {
-        private static readonly string _saveDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "FileSync");
+        private static readonly string _saveDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileSync");
+
         private static readonly string _savePath = Path.Combine(_saveDirectory, "syncDirs.json");
 
         public IOService()
@@ -21,16 +20,14 @@ namespace FileSync
             if (!File.Exists(_savePath))
                 File.WriteAllText(_savePath, "[]");
         }
-        public void SaveDirectorySettings(IList<SyncDirectory> syncDirectories)
+        public void SaveDirectorySettings(string syncDirectories)
         {
-            string serializedSyncDirectories = JsonSerializer.Serialize(syncDirectories);
-            File.WriteAllText(_savePath, serializedSyncDirectories);
+            File.WriteAllText(_savePath, syncDirectories);
         }
 
-        public IList<SyncDirectory> GetDirectorySettings()
+        public string GetDirectorySettings()
         {
-            string serializedSyncDirectories = File.ReadAllText(_savePath);
-            return JsonSerializer.Deserialize<List<SyncDirectory>>(serializedSyncDirectories);
+            return File.ReadAllText(_savePath);
         }
     }
 }

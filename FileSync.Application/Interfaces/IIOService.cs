@@ -4,7 +4,7 @@ namespace FileSync
 {
     public interface IIOService
     {
-        IList<SyncDirectory> GetDirectorySettings();
-        void SaveDirectorySettings(IList<SyncDirectory> syncDirectories);
+        string GetDirectorySettings();
+        void SaveDirectorySettings(string syncDirectories);
     }
 }
