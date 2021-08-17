@@ -7,7 +7,7 @@ using Microsoft.Identity.Client;
 
 namespace FileSync
 {
-    static class TokenCacheHelper
+    public static class TokenCacheHelper
     { 
         /// <summary>j
         /// Path to the token cache
@@ -44,7 +44,7 @@ namespace FileSync
                 }
             }
         }
-        internal static void EnableSerialization(ITokenCache tokenCache)
+        public static void EnableSerialization(ITokenCache tokenCache)
         {
             tokenCache.SetBeforeAccess(BeforeAccessNotification);
             tokenCache.SetAfterAccess(AfterAccessNotification);

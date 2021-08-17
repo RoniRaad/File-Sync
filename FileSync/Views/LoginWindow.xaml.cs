@@ -23,6 +23,10 @@ namespace FileSync
     {
         private readonly IPublicClientApplication _app;
         private readonly FileManager _fileManagerWindow;
+        private readonly ILoginViewModel _loginViewModel;
+
+        private bool IsLoggedIn = false;
+
         private static readonly string AadInstance = ConfigurationManager.AppSettings["ida:AADInstance"];
         private static readonly string Tenant = ConfigurationManager.AppSettings["ida:Tenant"];
         private static readonly string ClientId = ConfigurationManager.AppSettings["ida:ClientId"];
@@ -30,13 +34,11 @@ namespace FileSync
         private static readonly string TodoListScope = ConfigurationManager.AppSettings["todo:FileSyncScope"];
         private static readonly string TodoListBaseAddress = ConfigurationManager.AppSettings["todo:FileSyncBaseAddress"];
         private static readonly string[] Scopes = { TodoListScope };
-        private LoginViewModel viewModel = new LoginViewModel();
 
-
-        private bool IsLoggedIn = false;
-        public MainWindow(FileManager fileManagerWindow)
+        public MainWindow(FileManager fileManagerWindow, ILoginViewModel loginViewModel)
         {
             _fileManagerWindow = fileManagerWindow;
+            _loginViewModel = loginViewModel;
 
             InitializeComponent();
             _app = PublicClientApplicationBuilder.Create(ClientId)
@@ -46,8 +48,12 @@ namespace FileSync
 
             TokenCacheHelper.EnableSerialization(_app.UserTokenCache);
 
-            DataContext = viewModel;
-            viewModel.DisplayText = "You're not signed in!";
+            DataContext = _loginViewModel;
+            _loginViewModel.DisplayText = "You're not signed in!";
+
+            Show();
+
+            SignIn();
 
         }
 
@@ -65,7 +71,7 @@ namespace FileSync
 
                     Dispatcher.Invoke(() =>
                     {
-                        viewModel.DisplayText = $"Hello {result.Account.Username}!";
+                        _loginViewModel.DisplayText = $"Hello {result.Account.Username}!";
                         _fileManagerWindow.Show();
                         Close();
                         //loginText.Text = result.Account.Username;
@@ -97,7 +103,7 @@ namespace FileSync
 
                         Dispatcher.Invoke(() =>
                         {
-                            viewModel.DisplayText = $"Hello {result.Account.Username}!";
+                            _loginViewModel.DisplayText = $"Hello {result.Account.Username}!";
 
                             _fileManagerWindow.Show();
                             Close();
@@ -135,7 +141,7 @@ namespace FileSync
         }
         private void SignIn(object sender, RoutedEventArgs e)
         {
-            if (viewModel.DisplayText == "You're not signed in!")
+            if (_loginViewModel.DisplayText == "You're not signed in!")
                 SignIn();
             else
                 SignOut();
@@ -151,7 +157,7 @@ namespace FileSync
                 accounts = (await _app.GetAccountsAsync()).ToList();
             }
 
-            viewModel.DisplayText = "You're not signed in!";
+            _loginViewModel.DisplayText = "You're not signed in!";
             return;
         }
     }

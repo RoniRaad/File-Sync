@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using FileSync.Infrastructure.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
@@ -32,7 +33,9 @@ namespace FileSync
         {
             services.AddTransient<IIOService, IOService>();
             services.AddTransient<IFileManagerViewModel, FileManagerViewModel>();
+            services.AddTransient<ILoginViewModel, LoginViewModel>();
             services.AddSingleton<MainWindow>();
+            services.AddSingleton<AzureADService>();
             services.AddSingleton<FileManager>();
         }
 
@@ -40,8 +43,16 @@ namespace FileSync
         {
             await _host.StartAsync();
 
-            MainWindow window = _host.Services.GetRequiredService<MainWindow>();
-            window.Show();
+            var azureAdService = _host.Services.GetService<AzureADService>();
+            var successfulSilentSignIn = await azureAdService.TrySilentSignIn();
+            Window startingWindow;
+
+            if (!successfulSilentSignIn)
+                startingWindow = _host.Services.GetRequiredService<MainWindow>();
+            else
+                startingWindow = _host.Services.GetRequiredService<FileManager>();
+
+            startingWindow.Show();
 
             base.OnStartup(e);
         }

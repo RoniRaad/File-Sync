@@ -14,4 +14,8 @@
     <PackageReference Include="Microsoft.Identity.Client" Version="4.35.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\FileSync.Infrastructure\FileSync.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
