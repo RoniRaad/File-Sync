@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FileSync.WindowsService.Models
 {
-    class AzureAdConfig
+    public class AzureAdConfig
     {
         public string AADInstance { get; set; }
         public string Tenant { get; set; }

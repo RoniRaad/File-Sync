@@ -15,23 +15,20 @@ namespace FileSync.Infrastructure.Services
 {
     public class HeadlessAzureADService : IAuthorizationService
     {
-        private static readonly FileSyncConfig _fileSyncConfig;
-        private static readonly AzureAdConfig _iDAConfig;
-        private static readonly string AadInstance = ConfigurationManager.AppSettings["ida:AADInstance"];
-        private static readonly string Tenant = ConfigurationManager.AppSettings["ida:Tenant"];
-        private static readonly string ClientId = ConfigurationManager.AppSettings["ida:ClientId"];
-        private static readonly string Authority = string.Format(CultureInfo.InvariantCulture, AadInstance, Tenant);
-        private static readonly string TodoListScope = ConfigurationManager.AppSettings["FileSync:FileSyncScope"];
-        private static readonly string TodoListBaseAddress = ConfigurationManager.AppSettings["FileSync:FileSyncBaseAddress"];
-        private static readonly string[] Scopes = { TodoListScope };
+        private readonly AzureAdConfig _iDAConfig;
+
+        private readonly string[] Scopes;
         private readonly IPublicClientApplication _app;
         private string AccessToken;
         public bool IsSignedIn { get; set; }
 
         public HeadlessAzureADService(IOptions<AzureAdConfig> iDAConfig)
         {
-            _app = PublicClientApplicationBuilder.Create(ClientId)
-                .WithAuthority(Authority)
+            _iDAConfig = iDAConfig.Value;
+            Scopes = new string[] { _iDAConfig.FileSyncScope };
+
+            _app = PublicClientApplicationBuilder.Create(_iDAConfig.ClientId)
+                .WithAuthority(string.Format(CultureInfo.InvariantCulture, _iDAConfig.AADInstance, _iDAConfig.Tenant))
                 .WithRedirectUri("http://localhost")
                 .Build();
 
