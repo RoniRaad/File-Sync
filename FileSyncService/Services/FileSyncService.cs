@@ -33,7 +33,7 @@ namespace FileSync.WindowsService
         }
         public async Task<string> SyncFiles()
         {
-            return await UploadFile("C:\\Users\\rraad\\Desktop\\New folder\\ljM610_611_612_fs5.2_fw_2502087_007683_MD5_Checksum.txt");
+            return await UploadFile("C:\\Users\\rraad\\Desktop\\Test\\test.txt");
         }
         public async Task<string> UploadFile(string filePath)
         {
@@ -55,7 +55,7 @@ namespace FileSync.WindowsService
             using var fileContent = new ByteArrayContent(await File.ReadAllBytesAsync(filePath));
             fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("multipart/form-data");
             form.Add(fileContent, "file", Path.GetFileName(filePath));
-//          form.Add(new StringContent("789"), "userId");
+            form.Add(new StringContent(Path.GetDirectoryName(filePath)), "FilePath");
 //          form.Add(new StringContent("some comments"), "comment");
 //          form.Add(new StringContent("true"), "isPrimary");
 
