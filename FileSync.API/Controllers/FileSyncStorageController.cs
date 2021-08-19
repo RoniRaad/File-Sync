@@ -48,7 +48,7 @@ namespace FileSync.API.Controllers
             System.Security.Claims.ClaimsPrincipal currentUser = User;
             string sanitizedFilePath = SanitizeFolderName(keyValuePairs["FilePath"]);
             var tags = new Dictionary<string, string>();
-            tags.Add("LastModified", DateTime.Now.ToString());
+            tags.Add("LastModifiedTime", keyValuePairs["LastModifiedTime"]);
             // Because a container can only have an lowercase alpha-numeric name with 63 characters maximum we truncate the hash and set all characters to their lowercase form.
             string name = GetHashString(currentUser.Identity.Name).Substring(0, 63).ToLower();
 
@@ -70,16 +70,25 @@ namespace FileSync.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Get(
-         IFormFile file,
          IFormCollection keyValuePairs,
          CancellationToken cancellationToken)
         {
             BlobContainerClient blobContainer;
             System.Security.Claims.ClaimsPrincipal currentUser = User;
             string sanitizedFilePath = SanitizeFolderName(keyValuePairs["FilePath"]);
+            string fileName = keyValuePairs["FileName"];
+            string name = GetHashString(currentUser.Identity.Name).Substring(0, 63).ToLower();
 
+            blobContainer = _blobServiceClient.GetBlobContainerClient(name);
 
-            return Ok();
+            if (!await blobContainer.ExistsAsync())
+                blobContainer = await _blobServiceClient.CreateBlobContainerAsync(name);
+
+            var blobClient = blobContainer.GetBlobClient(sanitizedFilePath[3..] + Path.GetFileName(fileName));
+
+            IDictionary<string,string> blobTags = (await blobClient.GetTagsAsync()).Value.Tags;
+
+            return Ok(blobTags.ToList());
         }
 
         public static byte[] GetHash(string inputString)
@@ -99,7 +108,7 @@ namespace FileSync.API.Controllers
 
         public static string SanitizeFolderName(string name)
         {
-            string regexSearch = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
+            string regexSearch = new string(Path.GetInvalidPathChars());
             var r = new Regex(string.Format("[{0}]", Regex.Escape(regexSearch)));
             return r.Replace(name, "");
         }
