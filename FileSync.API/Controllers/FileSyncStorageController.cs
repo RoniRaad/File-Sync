@@ -16,6 +16,8 @@ using Azure.Storage.Blobs;
 using System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using System.Text.Json;
+using Azure.Storage.Blobs.Models;
 
 namespace FileSync.API.Controllers
 {
@@ -66,17 +68,14 @@ namespace FileSync.API.Controllers
             return Ok();
         }
 
-        [HttpGet("checkmtime", Name = "checkmtime")]
+        [HttpGet("getmodifiedtime", Name = "getmodifiedtime")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Get(
-         IFormCollection keyValuePairs,
-         CancellationToken cancellationToken)
+        public async Task<IActionResult> GetModifiedTime(string filePath, string fileName)
         {
             BlobContainerClient blobContainer;
             System.Security.Claims.ClaimsPrincipal currentUser = User;
-            string sanitizedFilePath = SanitizeFolderName(keyValuePairs["FilePath"]);
-            string fileName = keyValuePairs["FileName"];
+            string sanitizedFilePath = SanitizeFolderName(filePath);
             string name = GetHashString(currentUser.Identity.Name).Substring(0, 63).ToLower();
 
             blobContainer = _blobServiceClient.GetBlobContainerClient(name);
@@ -90,6 +89,47 @@ namespace FileSync.API.Controllers
 
             return Ok(blobTags.ToList());
         }
+
+        class FSFileInfo
+        {
+            public string Path { get; set; }
+            public string FileName { get; set; }
+            public string RelativePath { get; set; }
+            public DateTime ModifiedTime { get; set; }
+        }
+
+        [HttpGet("getmodifiedtimes", Name = "getmodifiedtimes")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> GetModifiedTimes()
+        {
+            BlobContainerClient blobContainer;
+            System.Security.Claims.ClaimsPrincipal currentUser = User;
+
+            IList<FSFileInfo> fileInfo = new List<FSFileInfo>();
+
+            string name = GetHashString(currentUser.Identity.Name).Substring(0, 63).ToLower();
+
+            blobContainer = _blobServiceClient.GetBlobContainerClient(name);
+
+            if (!await blobContainer.ExistsAsync())
+                blobContainer = await _blobServiceClient.CreateBlobContainerAsync(name);
+
+            var blobs = blobContainer.GetBlobs();
+
+            foreach (BlobItem blobItem in blobs)
+            {
+                fileInfo.Add(new FSFileInfo()
+                {
+                    FileName = Path.GetFileName(blobItem.Name),
+                    RelativePath = Path.GetPathRoot(blobItem.Name),
+                    Path = Path.GetDirectoryName(blobItem.Name),
+                    ModifiedTime = DateTime.Parse(blobItem.Tags["LastModifiedTime"])
+                });
+            }
+            return Ok(fileInfo);
+        }
+
 
         public static byte[] GetHash(string inputString)
         {

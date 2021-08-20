@@ -33,7 +33,7 @@ namespace FileSync.WindowsService
         }
         public async Task<string> SyncFiles()
         {
-            return await GetFileInfo("C:\\Users\\Roni\\Desktop\\_7242079641bda0823361d3e45cb18295-png.jpg");
+            return await GetFileInfo();
         }
         public async Task<string> UploadFile(string filePath)
         {
@@ -65,27 +65,15 @@ namespace FileSync.WindowsService
             return responseContent;
         }
 
-        public async Task<string> GetFileInfo(string filePath)
+        public async Task<string> GetFileInfo()
         {
             // _logger.LogInformation($"Uploading a text file [{filePath}].");
-            var _url = "https://localhost:44336/FileSyncStorage/checkmtime";
-            if (string.IsNullOrWhiteSpace(filePath))
-            {
-                throw new ArgumentNullException(nameof(filePath));
-            }
+            var _url = $"https://localhost:44336/FileSyncStorage/getmodifiedtimes";
 
-            if (!File.Exists(filePath))
-            {
-                throw new FileNotFoundException($"File [{filePath}] not found.");
-            }
             string accessToken = await _authorizationService.GetAccessToken();
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-            using var form = new MultipartFormDataContent();
-            form.Add(new StringContent(Path.GetDirectoryName(filePath)), "FilePath");
-            form.Add(new StringContent(Path.GetFileName(filePath)), "FileName");
-
-            var response = await _httpClient.PostAsync($"{_url}", form);
+            var response = await _httpClient.GetAsync($"{_url}");
             response.EnsureSuccessStatusCode();
             var responseContent = (await response.Content.ReadAsStringAsync()).ToString();
             //_logger.LogInformation("Uploading is complete.");
