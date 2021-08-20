@@ -6,6 +6,9 @@
         xmlns:local="clr-namespace:FileSync"
         mc:Ignorable="d"
         Title="FileManager" Height="450" Width="800">
+    <Window.Resources>
+        <local:RecursiveEnumConverter x:Key="RecursiveEnumConverter" />
+    </Window.Resources>
     <Grid Background="#383838">
         <Grid.RowDefinitions>
             <RowDefinition Height="80"/>
@@ -31,7 +34,7 @@
                 <GridView >
                     <GridViewColumn Width="100" Header="Sync Id" DisplayMemberBinding="{Binding SyncId}" />
                     <GridViewColumn Width="500" Header="Directory" DisplayMemberBinding="{Binding Directory}"/>
-                    <GridViewColumn Width="144" Header="Recursion Type" DisplayMemberBinding="{Binding RecursionType}"/>
+                    <GridViewColumn Width="144" Header="Recursion Type" DisplayMemberBinding="{Binding RecursionType, Converter={StaticResource RecursiveEnumConverter}}"/>
                 </GridView>
             </ListView.View>
         </ListView>

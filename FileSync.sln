@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileSync.WindowsService", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileSync.API", "FileSync.API\FileSync.API.csproj", "{154D323D-13E6-430B-8E94-8F15C77D6EA0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileSync.DomainModel", "FileSync.DomainModel\FileSync.DomainModel.csproj", "{389CD9C4-12B7-47D7-B30D-D1FDF72CA6B6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,14 @@ Global
 		{154D323D-13E6-430B-8E94-8F15C77D6EA0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{154D323D-13E6-430B-8E94-8F15C77D6EA0}.Release|x86.ActiveCfg = Release|Any CPU
 		{154D323D-13E6-430B-8E94-8F15C77D6EA0}.Release|x86.Build.0 = Release|Any CPU
+		{389CD9C4-12B7-47D7-B30D-D1FDF72CA6B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{389CD9C4-12B7-47D7-B30D-D1FDF72CA6B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{389CD9C4-12B7-47D7-B30D-D1FDF72CA6B6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{389CD9C4-12B7-47D7-B30D-D1FDF72CA6B6}.Debug|x86.Build.0 = Debug|Any CPU
+		{389CD9C4-12B7-47D7-B30D-D1FDF72CA6B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{389CD9C4-12B7-47D7-B30D-D1FDF72CA6B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{389CD9C4-12B7-47D7-B30D-D1FDF72CA6B6}.Release|x86.ActiveCfg = Release|Any CPU
+		{389CD9C4-12B7-47D7-B30D-D1FDF72CA6B6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

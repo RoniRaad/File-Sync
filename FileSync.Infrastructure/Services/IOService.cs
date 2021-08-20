@@ -10,7 +10,6 @@ namespace FileSync
     public class IOService : IIOService
     {
         private static readonly string _saveDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileSync");
-
         private static readonly string _savePath = Path.Combine(_saveDirectory, "syncDirs.json");
 
         public IOService()
