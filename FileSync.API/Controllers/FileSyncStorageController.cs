@@ -19,6 +19,7 @@ using System.Text.RegularExpressions;
 using System.Text.Json;
 using Azure.Storage.Blobs.Models;
 using FileSync.DomainMode.Models;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace FileSync.API.Controllers
 {
@@ -52,7 +53,7 @@ namespace FileSync.API.Controllers
             System.Security.Claims.ClaimsPrincipal currentUser = User;
             var tags = new Dictionary<string, string>();
 
-            tags.Add("LastModifiedTime", fileInfo.ModifiedTime.ToString());
+            tags.Add("LastModifiedTime", fileInfo.ModifiedTime.Ticks.ToString());
             // Because a container can only have an lowercase alpha-numeric name with 63 characters maximum we truncate the hash and set all characters to their lowercase form.
             string name = GetHashString(currentUser.Identity.Name).Substring(0, 63).ToLower();
 
@@ -63,32 +64,39 @@ namespace FileSync.API.Controllers
 
             var blobClient = blobContainer.GetBlobClient(Path.Combine(fileInfo.Path, Path.GetFileName(file.FileName)));
 
-            await blobClient.UploadAsync(file.OpenReadStream());
+            await blobClient.UploadAsync(file.OpenReadStream(), overwrite: true);
             blobClient.SetTags(tags);
 
             return Ok();
         }
 
-        [HttpGet("getmodifiedtime", Name = "getmodifiedtime")]
+        [HttpGet("getfile", Name = "getfile")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> GetModifiedTime(string filePath, string fileName)
+        public async Task<IActionResult> GetFile(string filePath)
         {
             BlobContainerClient blobContainer;
             System.Security.Claims.ClaimsPrincipal currentUser = User;
             string sanitizedFilePath = SanitizeFolderName(filePath);
             string name = GetHashString(currentUser.Identity.Name).Substring(0, 63).ToLower();
-
             blobContainer = _blobServiceClient.GetBlobContainerClient(name);
 
             if (!await blobContainer.ExistsAsync())
                 blobContainer = await _blobServiceClient.CreateBlobContainerAsync(name);
 
-            var blobClient = blobContainer.GetBlobClient(sanitizedFilePath[3..] + Path.GetFileName(fileName));
+            var blobClient = blobContainer.GetBlobClient(filePath);
 
-            IDictionary<string,string> blobTags = (await blobClient.GetTagsAsync()).Value.Tags;
+            if (!await blobClient.ExistsAsync())
+                return BadRequest();
 
-            return Ok(blobTags.ToList());
+            var provider = new FileExtensionContentTypeProvider();
+            if (!provider.TryGetContentType(sanitizedFilePath, out var contentType))
+            {
+                contentType = "application/octet-stream";
+            }
+
+            var bytes = (await blobClient.OpenReadAsync());
+            return File(bytes, contentType);
         }
 
         [HttpGet("getmodifiedtimes", Name = "getmodifiedtimes")]
@@ -97,12 +105,10 @@ namespace FileSync.API.Controllers
         public async Task<IActionResult> GetModifiedTimes()
         {
             BlobContainerClient blobContainer;
+
             System.Security.Claims.ClaimsPrincipal currentUser = User;
-
             IDictionary<string ,FSFileInfo> fileInfo = new Dictionary<string, FSFileInfo>();
-
             string name = GetHashString(currentUser.Identity.Name).Substring(0, 63).ToLower();
-
             blobContainer = _blobServiceClient.GetBlobContainerClient(name);
 
             if (!await blobContainer.ExistsAsync())
@@ -114,10 +120,11 @@ namespace FileSync.API.Controllers
                 {
                     FileName = Path.GetFileName(blobItem.Name),
                     Path = Path.GetDirectoryName(blobItem.Name),
-                    ModifiedTime = DateTime.Parse(blobItem.Tags["LastModifiedTime"])
+                    ModifiedTime = new DateTime(long.Parse(blobItem.Tags["LastModifiedTime"]))
                 });
             }
-            return Ok(fileInfo);
+
+            return Ok(JsonSerializer.Serialize(fileInfo));
         }
 
 
@@ -143,17 +150,5 @@ namespace FileSync.API.Controllers
             return r.Replace(name, "");
         }
 
-        private static string GetRootFolder(string path)
-        {
-            var root = Path.GetPathRoot(path);
-            while (true)
-            {
-                var temp = Path.GetDirectoryName(path);
-                if (temp != null && temp.Equals(root))
-                    break;
-                path = temp;
-            }
-            return path;
-        }
     }
 }

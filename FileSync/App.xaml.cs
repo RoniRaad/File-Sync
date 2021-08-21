@@ -1,4 +1,5 @@
-﻿using FileSync.Infrastructure.Services;
+﻿using FileSync.Application.ViewModels;
+using FileSync.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -35,6 +36,7 @@ namespace FileSync
             services.AddTransient<IFileManagerViewModel, FileManagerViewModel>();
             services.AddTransient<ILoginViewModel, LoginViewModel>();
             services.AddSingleton<IAuthorizationService, AzureADService>();
+            services.AddSingleton<IAddDirectoryViewModel, AddDirectoryViewModel>();
             services.AddSingleton<MainWindow>();
             services.AddSingleton<FileManager>();
         }

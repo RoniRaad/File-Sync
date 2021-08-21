@@ -34,6 +34,7 @@ namespace FileSync
 
         public void AddDirectory(SyncDirectory syncDirectory)
         {
+            syncDirectory.Directory = syncDirectory.Directory.Replace("\\", "/");
             SyncDirectories.Add(syncDirectory);
             SaveDirectorySettings();
             GetDirectorySettings();

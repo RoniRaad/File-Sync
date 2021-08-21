@@ -24,15 +24,15 @@
             <Grid>
                 <StackPanel>
                     <TextBlock HorizontalAlignment="Center">Directory ID</TextBlock>
-                    <TextBox Text="{Binding SyncId}" />
+                    <TextBox Text="{Binding Path=SyncDirectory.SyncId}" />
                 </StackPanel>
             </Grid>
             <Grid>
                 <StackPanel>
                     <TextBlock HorizontalAlignment="Center">Local Directory Path</TextBlock>
                     <StackPanel Orientation="Horizontal">
-                        <TextBox Width="212" Text="{Binding Directory}" />
-                        <Button Width="20">...</Button>
+                        <TextBox Width="200" Text="{Binding Path=SyncDirectory.Directory}" />
+                        <Button Width="20" Click="OpenFolderPicker">...</Button>
                     </StackPanel>
                 </StackPanel>
                 
@@ -40,7 +40,7 @@
             <Grid>
                 <StackPanel>
                     <TextBlock HorizontalAlignment="Center">Backup Type</TextBlock>
-                    <ComboBox SelectedValue="{Binding RecursionType,Mode=OneWayToSource}" SelectedValuePath="Tag">
+                    <ComboBox SelectedValue="{Binding Path=SyncDirectory.RecursionType,Mode=OneWayToSource}" SelectedValuePath="Tag">
                         <ComboBoxItem  Tag="Recursive" IsSelected="True" Content="Recursive (All Files and Subfolder)"/>
                         <ComboBoxItem Tag="None" Content="Non-Recursive (Only files in Directory Path)"/>
                     </ComboBox>
