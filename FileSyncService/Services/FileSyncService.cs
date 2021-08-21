@@ -57,7 +57,7 @@ namespace FileSync.WindowsService
                 }
                 else
                 {
-                    await UploadFile(localSyncDirectory.Value));
+                    await UploadFile(localSyncDirectory.Value);
                 }
             }
 
@@ -138,6 +138,24 @@ namespace FileSync.WindowsService
             return responseContent;
         }
 
+        public async Task<string> GetLocalPath(FSFileInfo fileInfo)
+        {
+            var syncDirs = await GetSyncDirectories();
+            var matchingDirectory = syncDirs.Where((dir) => dir.SyncId == GetRootFolder(fileInfo.Path)).FirstOrDefault();
+            return fileInfo.Path.Replace(matchingDirectory.SyncId, );
+        }
+        private static string GetRootFolder(string path)
+        {
+            var root = Path.GetPathRoot(path);
+            while (true)
+            {
+                var temp = Path.GetDirectoryName(path);
+                if (temp != null && temp.Equals(root))
+                    break;
+                path = temp;
+            }
+            return path;
+        }
         public async Task<IDictionary<string, FSFileInfo>> GetDictionaryOfRemoteFileInfo()
         {
             // _logger.LogInformation($"Uploading a text file [{filePath}].");
