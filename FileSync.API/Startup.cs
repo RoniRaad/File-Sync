@@ -1,3 +1,4 @@
+using FileSync.API.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -31,8 +32,8 @@ namespace FileSync.API
         {
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme);
             services.AddMicrosoftIdentityWebApiAuthentication(Configuration);
-
             services.AddControllers();
+            services.Configure<StorageAccountConfig>(Configuration);
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "FileSync.API", Version = "v1" });
@@ -48,6 +49,7 @@ namespace FileSync.API
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "FileSync.API v1"));
             }
+
 
             app.UseHttpsRedirection();
 

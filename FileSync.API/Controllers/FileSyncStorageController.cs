@@ -20,6 +20,8 @@ using System.Text.Json;
 using Azure.Storage.Blobs.Models;
 using FileSync.DomainMode.Models;
 using Microsoft.AspNetCore.StaticFiles;
+using FileSync.API.Models;
+using Microsoft.Extensions.Options;
 
 namespace FileSync.API.Controllers
 {
@@ -30,14 +32,16 @@ namespace FileSync.API.Controllers
     [RequiredScope("access_as_user")]
     public class FileSyncStorageController : ControllerBase
     {
-        private static string connectionString = "";
+        private readonly StorageAccountConfig _storageAccountConfig;
 
         private readonly ILogger<FileSyncStorageController> _logger;
-        private readonly BlobServiceClient _blobServiceClient = new BlobServiceClient(connectionString);
+        private readonly BlobServiceClient _blobServiceClient;
 
-        public FileSyncStorageController(ILogger<FileSyncStorageController> logger)
+        public FileSyncStorageController(ILogger<FileSyncStorageController> logger, IOptions<StorageAccountConfig> storageAccountConfig)
         {
             _logger = logger;
+            _storageAccountConfig = storageAccountConfig.Value;
+            _blobServiceClient = new BlobServiceClient(_storageAccountConfig.StorageAccountConnectionString);
         }
 
         [HttpPost("upload", Name = "upload")]

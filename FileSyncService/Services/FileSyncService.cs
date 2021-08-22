@@ -45,7 +45,7 @@ namespace FileSync.WindowsService
             var remoteSyncFiles = await GetDictionaryOfRemoteFileInfo();
 
             foreach (var localSyncDirectory in localSyncFiles)
-                try
+               /// try
                 {
                     if (remoteSyncFiles.ContainsKey(localSyncDirectory.Key))
                     {
@@ -58,7 +58,7 @@ namespace FileSync.WindowsService
                     else
                         await UploadFile(localSyncDirectory.Value);
                 }
-                catch (Exception ex) { }
+                //catch (Exception ex) { }
 
             if (remoteSyncFiles.Count > 0)
                 foreach (var remoteSyncFile in remoteSyncFiles)
@@ -71,7 +71,7 @@ namespace FileSync.WindowsService
         private async Task RequestFile(FSFileInfo fileInfo)
         {
             // _logger.LogInformation($"Uploading a text file [{filePath}].");
-            var _url = $"https://localhost:44336/FileSyncStorage/getfile?filePath={Path.Combine(fileInfo.Path, fileInfo.FileName)}";
+            var _url = $"https://filesyncwebservice.azurewebsites.net/FileSyncStorage/getfile?filePath={Path.Combine(fileInfo.Path, fileInfo.FileName)}";
 
             string accessToken = await _authorizationService.GetAccessToken();
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -131,7 +131,7 @@ namespace FileSync.WindowsService
         public async Task<string> UploadFile(FSFileInfo filePath)
         {
             // _logger.LogInformation($"Uploading a text file [{filePath}].");
-            var _url = "https://localhost:44336/FileSyncStorage/upload";
+            var _url = "https://filesyncwebservice.azurewebsites.net/FileSyncStorage/upload";
 
             string accessToken = await _authorizationService.GetAccessToken();
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -171,7 +171,7 @@ namespace FileSync.WindowsService
         public async Task<IDictionary<string, FSFileInfo>> GetDictionaryOfRemoteFileInfo()
         {
             // _logger.LogInformation($"Uploading a text file [{filePath}].");
-            var _url = $"https://localhost:44336/FileSyncStorage/getmodifiedtimes";
+            var _url = $"https://filesyncwebservice.azurewebsites.net/FileSyncStorage/getmodifiedtimes";
 
             string accessToken = await _authorizationService.GetAccessToken();
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
