@@ -1,5 +1,7 @@
-﻿using FileSync.Application.ViewModels;
+﻿using FileSync.Application.Interfaces;
+using FileSync.Application.ViewModels;
 using FileSync.Infrastructure.Services;
+using FileSync.UI.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;

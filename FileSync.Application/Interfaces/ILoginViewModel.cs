@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace FileSync
+namespace FileSync.Application.Interfaces
 {
     public interface ILoginViewModel
     {

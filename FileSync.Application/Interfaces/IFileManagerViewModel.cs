@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using FileSync.DomainMode.Models;
+using System.Collections.Generic;
 using System.ComponentModel;
 
-namespace FileSync
+namespace FileSync.Application.Interfaces
 {
     public interface IFileManagerViewModel : INotifyPropertyChanged
     {

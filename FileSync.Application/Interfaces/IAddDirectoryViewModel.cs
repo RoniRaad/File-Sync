@@ -1,6 +1,7 @@
-﻿using System.ComponentModel;
+﻿using FileSync.DomainMode.Models;
+using System.ComponentModel;
 
-namespace FileSync.Application.ViewModels
+namespace FileSync.Application.Interfaces
 {
     public interface IAddDirectoryViewModel
     {

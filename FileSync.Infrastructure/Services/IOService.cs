@@ -1,7 +1,8 @@
-﻿using System;
+﻿using FileSync.Application.Interfaces;
+using System;
 using System.IO;
 
-namespace FileSync
+namespace FileSync.Infrastructure.Services
 {
     /// <summary>
     /// Interaction logic for FileManager.xaml

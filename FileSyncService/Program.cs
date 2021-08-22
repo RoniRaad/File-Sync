@@ -3,7 +3,8 @@ using Microsoft.Extensions.Hosting;
 using FileSync.WindowsService;
 using Microsoft.Extensions.Configuration;
 using FileSync.WindowsService.Models;
-using FileSync.Infrastructure.Services;
+using FileSync.WindowsService.Services;
+using FileSync.WindowsService.Interfaces;
 
 using IHost host = Host.CreateDefaultBuilder(args)
     .UseWindowsService(options =>
@@ -15,7 +16,7 @@ using IHost host = Host.CreateDefaultBuilder(args)
         services.AddHostedService<WindowsBackgroundService>();
         services.AddHttpClient<FileSyncService>();
         services.Configure<AzureAdConfig>(context.Configuration.GetSection("AzureAdConfig"));
-        services.AddSingleton<IAuthorizationService, HeadlessAzureADService>();
+        services.AddSingleton<IAuthorizationService, AzureAdService>();
     })
 
     .Build();

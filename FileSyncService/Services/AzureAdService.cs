@@ -10,10 +10,11 @@ using static System.Formats.Asn1.AsnWriter;
 using System.Windows;
 using FileSync.WindowsService.Models;
 using Microsoft.Extensions.Options;
+using FileSync.WindowsService.Interfaces;
 
-namespace FileSync.Infrastructure.Services
+namespace FileSync.WindowsService.Services
 {
-    public class HeadlessAzureADService : IAuthorizationService
+    public class AzureAdService : IAuthorizationService
     {
         private readonly AzureAdConfig _iDAConfig;
 
@@ -22,7 +23,7 @@ namespace FileSync.Infrastructure.Services
         private string AccessToken;
         public bool IsSignedIn { get; set; }
 
-        public HeadlessAzureADService(IOptions<AzureAdConfig> iDAConfig)
+        public AzureAdService(IOptions<AzureAdConfig> iDAConfig)
         {
             _iDAConfig = iDAConfig.Value;
             Scopes = new string[] { _iDAConfig.FileSyncScope };

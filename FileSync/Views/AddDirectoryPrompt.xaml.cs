@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Ookii.Dialogs.Wpf;
 using FileSync.Application.ViewModels;
+using FileSync.Application.Interfaces;
 
 namespace FileSync
 {

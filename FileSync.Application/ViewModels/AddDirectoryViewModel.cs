@@ -1,4 +1,6 @@
-﻿using System;
+﻿using FileSync.Application.Interfaces;
+using FileSync.DomainMode.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;

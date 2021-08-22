@@ -1,7 +1,8 @@
-﻿using System.ComponentModel;
+﻿using FileSync.Application.Interfaces;
+using System.ComponentModel;
 
 
-namespace FileSync
+namespace FileSync.Application.ViewModels
 {
     public class LoginViewModel : INotifyPropertyChanged, ILoginViewModel
     {

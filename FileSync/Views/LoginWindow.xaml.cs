@@ -1,4 +1,5 @@
-﻿using FileSync.Infrastructure.Services;
+﻿using FileSync.Application.Interfaces;
+using FileSync.Infrastructure.Services;
 using Microsoft.Identity.Client;
 using System.Collections.Generic;
 using System.Configuration;

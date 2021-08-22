@@ -1,5 +1,6 @@
 using FileSync.WindowsService;
 using FileSync.WindowsService.Models;
+using FileSync.WindowsService.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

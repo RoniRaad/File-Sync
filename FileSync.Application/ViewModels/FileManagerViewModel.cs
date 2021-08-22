@@ -1,9 +1,10 @@
-﻿using FileSync.Infrastructure.Services;
+﻿using FileSync.Application.Interfaces;
+using FileSync.DomainMode.Models;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text.Json;
 
-namespace FileSync
+namespace FileSync.Application.ViewModels
 {
     public class FileManagerViewModel : IFileManagerViewModel
     {

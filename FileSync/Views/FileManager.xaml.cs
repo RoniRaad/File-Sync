@@ -1,4 +1,5 @@
-﻿using FileSync.Application.ViewModels;
+﻿using FileSync.Application.Interfaces;
+using FileSync.Application.ViewModels;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;

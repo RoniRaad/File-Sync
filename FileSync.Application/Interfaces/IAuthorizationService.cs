@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace FileSync.Infrastructure.Services
+namespace FileSync.Application.Interfaces
 {
     public interface IAuthorizationService
     {

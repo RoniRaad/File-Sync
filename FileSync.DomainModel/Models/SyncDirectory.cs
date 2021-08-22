@@ -1,7 +1,7 @@
 ﻿using FileSync.DomainModel.Enums;
 using System.ComponentModel;
 
-namespace FileSync
+namespace FileSync.DomainMode.Models
 {
     public class SyncDirectory
     {

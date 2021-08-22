@@ -8,8 +8,10 @@ using System.Globalization;
 using Microsoft.Identity.Client;
 using static System.Formats.Asn1.AsnWriter;
 using System.Windows;
+using FileSync.Infrastructure.Services;
+using FileSync.Application.Interfaces;
 
-namespace FileSync.Infrastructure.Services
+namespace FileSync.UI.Services
 {
     public class AzureADService : IAuthorizationService
     {
