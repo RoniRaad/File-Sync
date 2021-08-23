@@ -1,35 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Configuration;
 using System.Globalization;
 using Microsoft.Identity.Client;
-using static System.Formats.Asn1.AsnWriter;
 using System.Windows;
-using FileSync.Infrastructure.Services;
 using FileSync.Application.Interfaces;
+using Microsoft.Extensions.Options;
+using FileSync.DomainModel.Models;
 
 namespace FileSync.UI.Services
 {
     public class AzureADService : IAuthorizationService
     {
-        private static readonly string AadInstance = ConfigurationManager.AppSettings["ida:AADInstance"];
-        private static readonly string Tenant = ConfigurationManager.AppSettings["ida:Tenant"];
-        private static readonly string ClientId = ConfigurationManager.AppSettings["ida:ClientId"];
-        private static readonly string Authority = string.Format(CultureInfo.InvariantCulture, AadInstance, Tenant);
-        private static readonly string TodoListScope = ConfigurationManager.AppSettings["FileSync:FileSyncScope"];
-        private static readonly string TodoListBaseAddress = ConfigurationManager.AppSettings["FileSync:FileSyncBaseAddress"];
-        private static readonly string[] Scopes = { TodoListScope };
+        private readonly AzureAdConfig _azureOptions;
+        private readonly string _authority;
+        private readonly string[] _scopes;
         private readonly IPublicClientApplication _app;
         private string AccessToken;
         public bool IsSignedIn { get; set; }
 
-        public AzureADService()
+        public AzureADService(IOptions<AzureAdConfig> azureOptions)
         {
-            _app = PublicClientApplicationBuilder.Create(ClientId)
-                .WithAuthority(Authority)
+            _azureOptions = azureOptions.Value;
+            _authority = string.Format(CultureInfo.InvariantCulture, _azureOptions.AADInstance, _azureOptions.Tenant);
+            _scopes = new string[] { _azureOptions.FileSyncScope };
+            _app = PublicClientApplicationBuilder.Create(_azureOptions.ClientId)
+                .WithAuthority(_authority)
                 .WithRedirectUri("http://localhost")
                 .Build();
 
@@ -50,7 +46,7 @@ namespace FileSync.UI.Services
             accounts = (await _app.GetAccountsAsync()).ToList();
             try
             {
-                var result = await _app.AcquireTokenSilent(Scopes, accounts.FirstOrDefault())
+                var result = await _app.AcquireTokenSilent(_scopes, accounts.FirstOrDefault())
                     .ExecuteAsync()
                     .ConfigureAwait(false);
 
@@ -75,7 +71,7 @@ namespace FileSync.UI.Services
             {
                 try
                 {
-                    var builder = _app.AcquireTokenInteractive(Scopes)
+                    var builder = _app.AcquireTokenInteractive(_scopes)
                         .WithAccount(accounts.FirstOrDefault())
                         .WithPrompt(Prompt.SelectAccount);
 

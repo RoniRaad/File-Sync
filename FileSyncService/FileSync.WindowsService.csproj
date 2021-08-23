@@ -16,4 +16,8 @@
   <ItemGroup>
     <ProjectReference Include="..\FileSync.DomainModel\FileSync.DomainModel.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\" />
+  </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace FileSync.DomainMode.Models
+namespace FileSync.DomainModel.Models
 {
     public class FSFileInfo
     {

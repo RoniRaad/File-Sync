@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace FileSync.Application.Interfaces
+﻿namespace FileSync.Application.Interfaces
 {
     public interface IIOService
     {

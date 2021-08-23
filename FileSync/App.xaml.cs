@@ -1,15 +1,10 @@
 ﻿using FileSync.Application.Interfaces;
 using FileSync.Application.ViewModels;
+using FileSync.DomainModel.Models;
 using FileSync.Infrastructure.Services;
 using FileSync.UI.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace FileSync
@@ -26,14 +21,15 @@ namespace FileSync
             _host = Host.CreateDefaultBuilder()
                 .ConfigureServices((context, services) =>
                 {
-                    ConfigureServices(services);
+                    ConfigureServices(context, services);
                 })
                 .Build();
         }
 
 
-        private void ConfigureServices(IServiceCollection services)
+        private void ConfigureServices(HostBuilderContext context, IServiceCollection services)
         {
+            services.Configure<AzureAdConfig>(context.Configuration.GetSection("AzureAdConfig"));
             services.AddTransient<IIOService, IOService>();
             services.AddTransient<IFileManagerViewModel, FileManagerViewModel>();
             services.AddTransient<ILoginViewModel, LoginViewModel>();

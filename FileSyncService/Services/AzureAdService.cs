@@ -1,16 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Configuration;
 using System.Globalization;
 using Microsoft.Identity.Client;
-using static System.Formats.Asn1.AsnWriter;
-using System.Windows;
-using FileSync.WindowsService.Models;
 using Microsoft.Extensions.Options;
 using FileSync.WindowsService.Interfaces;
+using FileSync.DomainModel.Models;
 
 namespace FileSync.WindowsService.Services
 {
@@ -18,7 +13,7 @@ namespace FileSync.WindowsService.Services
     {
         private readonly AzureAdConfig _iDAConfig;
 
-        private readonly string[] Scopes;
+        private readonly string[] _scopes;
         private readonly IPublicClientApplication _app;
         private string AccessToken;
         public bool IsSignedIn { get; set; }
@@ -26,7 +21,7 @@ namespace FileSync.WindowsService.Services
         public AzureAdService(IOptions<AzureAdConfig> iDAConfig)
         {
             _iDAConfig = iDAConfig.Value;
-            Scopes = new string[] { _iDAConfig.FileSyncScope };
+            _scopes = new string[] { _iDAConfig.FileSyncScope };
 
             _app = PublicClientApplicationBuilder.Create(_iDAConfig.ClientId)
                 .WithAuthority(string.Format(CultureInfo.InvariantCulture, _iDAConfig.AADInstance, _iDAConfig.Tenant))
@@ -50,7 +45,7 @@ namespace FileSync.WindowsService.Services
             accounts = (await _app.GetAccountsAsync()).ToList();
             try
             {
-                var result = await _app.AcquireTokenSilent(Scopes, accounts.FirstOrDefault())
+                var result = await _app.AcquireTokenSilent(_scopes, accounts.FirstOrDefault())
                     .ExecuteAsync()
                     .ConfigureAwait(false);
 

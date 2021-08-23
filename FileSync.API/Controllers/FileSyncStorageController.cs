@@ -18,7 +18,7 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using Azure.Storage.Blobs.Models;
-using FileSync.DomainMode.Models;
+using FileSync.DomainModel.Models;
 using Microsoft.AspNetCore.StaticFiles;
 using FileSync.API.Models;
 using Microsoft.Extensions.Options;
@@ -33,13 +33,10 @@ namespace FileSync.API.Controllers
     public class FileSyncStorageController : ControllerBase
     {
         private readonly StorageAccountConfig _storageAccountConfig;
-
-        private readonly ILogger<FileSyncStorageController> _logger;
         private readonly BlobServiceClient _blobServiceClient;
 
-        public FileSyncStorageController(ILogger<FileSyncStorageController> logger, IOptions<StorageAccountConfig> storageAccountConfig)
+        public FileSyncStorageController(IOptions<StorageAccountConfig> storageAccountConfig)
         {
-            _logger = logger;
             _storageAccountConfig = storageAccountConfig.Value;
             _blobServiceClient = new BlobServiceClient(_storageAccountConfig.StorageAccountConnectionString);
         }
@@ -76,7 +73,6 @@ namespace FileSync.API.Controllers
 
         [HttpGet("getfile", Name = "getfile")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetFile(string filePath)
         {
             BlobContainerClient blobContainer;
@@ -99,13 +95,12 @@ namespace FileSync.API.Controllers
                 contentType = "application/octet-stream";
             }
 
-            var bytes = (await blobClient.OpenReadAsync());
+            var bytes = await blobClient.OpenReadAsync();
             return File(bytes, contentType);
         }
 
         [HttpGet("getmodifiedtimes", Name = "getmodifiedtimes")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetModifiedTimes()
         {
             BlobContainerClient blobContainer;
@@ -130,7 +125,6 @@ namespace FileSync.API.Controllers
 
             return Ok(JsonSerializer.Serialize(fileInfo));
         }
-
 
         public static byte[] GetHash(string inputString)
         {

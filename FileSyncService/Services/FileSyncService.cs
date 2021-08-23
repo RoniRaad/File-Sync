@@ -1,6 +1,5 @@
-﻿using FileSync.DomainMode.Models;
+﻿using FileSync.DomainModel.Models;
 using FileSync.WindowsService.Interfaces;
-using FileSync.WindowsService.Models;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -17,7 +16,6 @@ namespace FileSync.WindowsService.Services
     {
         private static readonly string _saveDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileSync");
         private static readonly string _savePath = Path.Combine(_saveDirectory, "syncDirs.json");
-
         private readonly HttpClient _httpClient;
         private readonly AzureAdConfig _azureAdConfig;
         private readonly IAuthorizationService _authorizationService;
@@ -34,14 +32,14 @@ namespace FileSync.WindowsService.Services
             _authorizationService = authorizationService;
         }
 
-        public async Task<string> SyncFiles()
+        public async Task SyncFiles()
         {
             var syncDirectories = await GetSyncDirectories();
-            var localSyncFiles = await GetDictionaryOfFileInfos(syncDirectories);
+            var localSyncFiles = GetDictionaryOfFileInfos(syncDirectories);
             var remoteSyncFiles = await GetDictionaryOfRemoteFileInfo();
 
             foreach (var localSyncDirectory in localSyncFiles)
-               /// try
+                try
                 {
                     if (remoteSyncFiles.ContainsKey(localSyncDirectory.Key))
                     {
@@ -54,31 +52,28 @@ namespace FileSync.WindowsService.Services
                     else
                         await UploadFile(localSyncDirectory.Value);
                 }
-                //catch (Exception ex) { }
+                catch { }
 
             if (remoteSyncFiles.Count > 0)
                 foreach (var remoteSyncFile in remoteSyncFiles)
-                    if (syncDirectories.Where((syncDir) => syncDir.SyncId == GetRootFolder(remoteSyncFile.Value.Path)).Count() > 0)
+                    if (syncDirectories.Count((syncDir) => syncDir.SyncId == GetRootFolder(remoteSyncFile.Value.Path)) > 0)
                         await RequestFile(remoteSyncFile.Value);
-
-            return "";
         }
 
         private async Task RequestFile(FSFileInfo fileInfo)
         {
-            // _logger.LogInformation($"Uploading a text file [{filePath}].");
-            var _url = $"{_azureAdConfig.FileSyncBaseAddress}FileSyncStorage/getfile?filePath={Path.Combine(fileInfo.Path, fileInfo.FileName)}";
+            var url = $"{_azureAdConfig.FileSyncBaseAddress}FileSyncStorage/getfile?filePath={Path.Combine(fileInfo.Path, fileInfo.FileName)}";
 
             string accessToken = await _authorizationService.GetAccessToken();
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
 
-            var response = await _httpClient.GetAsync($"{_url}");
+            var response = await _httpClient.GetAsync($"{url}");
             response.EnsureSuccessStatusCode();
             var responseContent = await response.Content.ReadAsByteArrayAsync();
 
             var localPath = await GetLocalPath(fileInfo);
-            //_logger.LogInformation("Uploading is complete.");
+
             File.WriteAllBytes(localPath, responseContent);
             File.SetLastWriteTime(localPath, fileInfo.ModifiedTime);
         }
@@ -105,13 +100,14 @@ namespace FileSync.WindowsService.Services
         private async Task<IList<SyncDirectory>> GetSyncDirectories()
         {
             var fileInfoJson = await File.ReadAllTextAsync(_savePath);
+
             return JsonSerializer.Deserialize<List<SyncDirectory>>(fileInfoJson);
         }
 
-        private async Task<IDictionary<string, FSFileInfo>> GetDictionaryOfFileInfos(IList<SyncDirectory> syncDirectories)
+        private IDictionary<string, FSFileInfo> GetDictionaryOfFileInfos(IList<SyncDirectory> syncDirectories)
         {
-            
             var fileInfo = new Dictionary<string, FSFileInfo>();
+
             foreach (var syncDirectory in syncDirectories)
                 foreach (var file in Directory.GetFiles(syncDirectory.Directory, "*.*", SearchOption.AllDirectories))
                     fileInfo.Add( Path.Combine(syncDirectory.SyncId, Path.GetRelativePath(syncDirectory.Directory, file)).Replace("\\", "/"), new FSFileInfo
@@ -126,8 +122,7 @@ namespace FileSync.WindowsService.Services
 
         public async Task<string> UploadFile(FSFileInfo filePath)
         {
-            // _logger.LogInformation($"Uploading a text file [{filePath}].");
-            var _url = $"{_azureAdConfig.FileSyncBaseAddress}FileSyncStorage/upload";
+            var url = $"{_azureAdConfig.FileSyncBaseAddress}FileSyncStorage/upload";
 
             string accessToken = await _authorizationService.GetAccessToken();
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -138,11 +133,10 @@ namespace FileSync.WindowsService.Services
             form.Add(fileContent, "file", Path.GetFileName(filePath.FileName));
             form.Add(new StringContent(JsonSerializer.Serialize(filePath)), "FSFileInfo");
 
-
-            var response = await _httpClient.PostAsync($"{_url}", form);
+            var response = await _httpClient.PostAsync($"{url}", form);
             response.EnsureSuccessStatusCode();
             var responseContent = await response.Content.ReadAsStringAsync();
-            //_logger.LogInformation("Uploading is complete.");
+
             return responseContent;
         }
 
@@ -155,6 +149,7 @@ namespace FileSync.WindowsService.Services
         private static string GetRootFolder(string path)
         {
             var root = Path.GetPathRoot(path);
+
             while (true)
             {
                 var temp = Path.GetDirectoryName(path);
@@ -162,17 +157,17 @@ namespace FileSync.WindowsService.Services
                     break;
                 path = temp;
             }
+
             return path;
         }
         public async Task<IDictionary<string, FSFileInfo>> GetDictionaryOfRemoteFileInfo()
         {
-            // _logger.LogInformation($"Uploading a text file [{filePath}].");
-            var _url = $"{_azureAdConfig.FileSyncBaseAddress}FileSyncStorage/getmodifiedtimes";
+            var url = $"{_azureAdConfig.FileSyncBaseAddress}FileSyncStorage/getmodifiedtimes";
 
             string accessToken = await _authorizationService.GetAccessToken();
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-            var response = await _httpClient.GetAsync($"{_url}");
+            var response = await _httpClient.GetAsync($"{url}");
             response.EnsureSuccessStatusCode();
             var responseContent = (await response.Content.ReadAsStringAsync()).ToString();
 

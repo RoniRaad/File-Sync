@@ -1,5 +1,5 @@
 ﻿using FileSync.Application.Interfaces;
-using FileSync.DomainMode.Models;
+using FileSync.DomainModel.Models;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text.Json;
@@ -9,14 +9,12 @@ namespace FileSync.Application.ViewModels
     public class FileManagerViewModel : IFileManagerViewModel
     {
         private readonly IIOService _iOService;
-        private readonly IAuthorizationService _authorizationService;
         public IList<SyncDirectory> SyncDirectories { get; set; }
         public SyncDirectory SelectedSyncDirectory { get; set; }
 
-        public FileManagerViewModel(IIOService iOService, IAuthorizationService authorizationService)
+        public FileManagerViewModel(IIOService iOService)
         {
             _iOService = iOService;
-            _authorizationService = authorizationService;
 
             GetDirectorySettings();
         }

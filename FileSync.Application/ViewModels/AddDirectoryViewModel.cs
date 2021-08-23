@@ -1,11 +1,6 @@
 ﻿using FileSync.Application.Interfaces;
-using FileSync.DomainMode.Models;
-using System;
-using System.Collections.Generic;
+using FileSync.DomainModel.Models;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FileSync.Application.ViewModels
 {

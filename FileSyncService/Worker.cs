@@ -1,5 +1,4 @@
-using FileSync.WindowsService;
-using FileSync.WindowsService.Models;
+using FileSync.DomainModel.Models;
 using FileSync.WindowsService.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -27,8 +26,7 @@ namespace FileSync.WindowsService
             {
                 try
                 {
-                    string status = await _fileSyncService.SyncFiles();
-                    _logger.LogWarning(status);
+                    await _fileSyncService.SyncFiles();
 
                     await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
                 }

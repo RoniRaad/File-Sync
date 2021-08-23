@@ -1,4 +1,4 @@
-﻿using FileSync.DomainMode.Models;
+﻿using FileSync.DomainModel.Models;
 using System.ComponentModel;
 
 namespace FileSync.Application.Interfaces
