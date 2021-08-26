@@ -8,19 +8,21 @@ using FileSync.Application.Interfaces;
 using Microsoft.Extensions.Options;
 using FileSync.DomainModel.Models;
 
-namespace FileSync.UI.Services
+namespace FileSync.WindowsService.Services
 {
     public class AzureADService : IAuthorizationService
     {
         private readonly AzureAdConfig _azureOptions;
+        private readonly ITokenCacheService _tokenCacheService;
         private readonly string _authority;
         private readonly string[] _scopes;
         private readonly IPublicClientApplication _app;
         private string AccessToken;
         public bool IsSignedIn { get; set; }
 
-        public AzureADService(IOptions<AzureAdConfig> azureOptions)
+        public AzureADService(IOptions<AzureAdConfig> azureOptions, ITokenCacheService tokenCacheService)
         {
+            _tokenCacheService = tokenCacheService;
             _azureOptions = azureOptions.Value;
             _authority = string.Format(CultureInfo.InvariantCulture, _azureOptions.AADInstance, _azureOptions.Tenant);
             _scopes = new string[] { _azureOptions.FileSyncScope };
@@ -29,7 +31,7 @@ namespace FileSync.UI.Services
                 .WithRedirectUri("http://localhost")
                 .Build();
 
-            TokenCacheHelper.EnableSerialization(_app.UserTokenCache);
+            _tokenCacheService.EnableSerialization(_app.UserTokenCache);
         }
 
         public async Task<string> GetAccessToken()

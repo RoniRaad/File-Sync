@@ -1,5 +1,6 @@
 ﻿using FileSync.DomainModel.Models;
 using FileSync.WindowsService.Interfaces;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -14,8 +15,10 @@ namespace FileSync.WindowsService.Services
 {
     public class FileSyncService
     {
-        private static readonly string _saveDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileSync");
-        private static readonly string _savePath = Path.Combine(_saveDirectory, "syncDirs.json");
+        private readonly string _savePath = Path.Combine(
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileSync"),
+        "syncDirs.json");
+        private readonly ILogger _logger;
         private readonly HttpClient _httpClient;
         private readonly AzureAdConfig _azureAdConfig;
         private readonly IAuthorizationService _authorizationService;
@@ -25,8 +28,9 @@ namespace FileSync.WindowsService.Services
             PropertyNameCaseInsensitive = true
         };
 
-        public FileSyncService(HttpClient httpClient, IOptions<AzureAdConfig> azureAdConfig, IAuthorizationService authorizationService)
+        public FileSyncService(ILogger<FileSyncService> logger, HttpClient httpClient, IOptions<AzureAdConfig> azureAdConfig, IAuthorizationService authorizationService)
         {
+            _logger = logger;
             _httpClient = httpClient;
             _azureAdConfig = azureAdConfig.Value;
             _authorizationService = authorizationService;
@@ -34,30 +38,52 @@ namespace FileSync.WindowsService.Services
 
         public async Task SyncFiles()
         {
-            var syncDirectories = await GetSyncDirectories();
-            var localSyncFiles = GetDictionaryOfFileInfos(syncDirectories);
-            var remoteSyncFiles = await GetDictionaryOfRemoteFileInfo();
+            try
+            {
+                var syncDirectories = await GetSyncDirectories();
+                _logger.LogInformation("Remote Sync directories retrieved successfully...");
+                var localSyncFiles = GetDictionaryOfFileInfos(syncDirectories);
+                _logger.LogInformation("Local Sync directories retrieved successfully...");
+                var remoteSyncFiles = await GetDictionaryOfRemoteFileInfo();
+                _logger.LogInformation("Dictionary of remote file info retrieved successfully...");
 
-            foreach (var localSyncDirectory in localSyncFiles)
-                try
-                {
-                    if (remoteSyncFiles.ContainsKey(localSyncDirectory.Key))
+
+                foreach (var localSyncDirectory in localSyncFiles)
+                    try
                     {
-                        if (localSyncDirectory.Value.ModifiedTime.CompareTo(remoteSyncFiles[localSyncDirectory.Key].ModifiedTime) > 0)
+                        if (remoteSyncFiles.ContainsKey(localSyncDirectory.Key))
+                        {
+                            if (localSyncDirectory.Value.ModifiedTime.CompareTo(remoteSyncFiles[localSyncDirectory.Key].ModifiedTime) > 0)
+                                await UploadFile(localSyncDirectory.Value);
+                            else if (localSyncDirectory.Value.ModifiedTime.CompareTo(remoteSyncFiles[localSyncDirectory.Key].ModifiedTime) < 0)
+                                await RequestFile(localSyncDirectory.Value);
+                            remoteSyncFiles.Remove(localSyncDirectory.Key);
+                        }
+                        else
                             await UploadFile(localSyncDirectory.Value);
-                        else if (localSyncDirectory.Value.ModifiedTime.CompareTo(remoteSyncFiles[localSyncDirectory.Key].ModifiedTime) < 0)
-                            await RequestFile(localSyncDirectory.Value);
-                        remoteSyncFiles.Remove(localSyncDirectory.Key);
-                    }
-                    else
-                        await UploadFile(localSyncDirectory.Value);
-                }
-                catch { }
+                        _logger.LogInformation($"Successfully compaired file {localSyncDirectory.Key} to remote file...");
 
-            if (remoteSyncFiles.Count > 0)
-                foreach (var remoteSyncFile in remoteSyncFiles)
-                    if (syncDirectories.Count((syncDir) => syncDir.SyncId == GetRootFolder(remoteSyncFile.Value.Path)) > 0)
-                        await RequestFile(remoteSyncFile.Value);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError($"Error when compairing file {localSyncDirectory.Key} to remote file...");
+                        _logger.LogError(e.Message);
+                        _logger.LogError(e.InnerException?.Message);
+                        _logger.LogError(e.StackTrace);
+                    }
+
+                if (remoteSyncFiles.Count > 0)
+                    foreach (var remoteSyncFile in remoteSyncFiles)
+                        if (syncDirectories.Count((syncDir) => syncDir.SyncId == GetRootFolder(remoteSyncFile.Value.Path)) > 0)
+                            await RequestFile(remoteSyncFile.Value);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
+                _logger.LogError(e.InnerException?.Message);
+                _logger.LogError(e.StackTrace);
+                throw;
+            }
         }
 
         private async Task RequestFile(FSFileInfo fileInfo)

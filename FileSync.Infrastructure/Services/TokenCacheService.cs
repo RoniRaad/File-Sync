@@ -8,18 +8,18 @@ using Microsoft.Identity.Client;
 
 namespace FileSync
 {
-    public static class TokenCacheHelper
-    { 
+    public class TokenCacheService : ITokenCacheService
+    {
         /// <summary>j
         /// Path to the token cache
         /// </summary>
-        private static readonly string _saveDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileSync");
-        private static readonly string _cacheFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileSync.msalcache.bin");
+        private readonly static string _saveDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileSync");
+        private readonly static string _cacheFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileSync.msalcache.bin");
 
 
         private static readonly object FileLock = new object();
 
-        private static void BeforeAccessNotification(TokenCacheNotificationArgs args)
+        private void BeforeAccessNotification(TokenCacheNotificationArgs args)
         {
             lock (FileLock)
             {
@@ -31,7 +31,7 @@ namespace FileSync
             }
         }
 
-        private static void AfterAccessNotification(TokenCacheNotificationArgs args)
+        private void AfterAccessNotification(TokenCacheNotificationArgs args)
         {
             // if the access operation resulted in a cache update
             if (args.HasStateChanged)
@@ -40,14 +40,14 @@ namespace FileSync
                 {
                     // reflect changes in the persistent store
                     File.WriteAllBytes(_cacheFilePath,
-                                       ProtectedData.Protect(args.TokenCache.SerializeMsalV3(), 
-                                                             null, 
+                                       ProtectedData.Protect(args.TokenCache.SerializeMsalV3(),
+                                                             null,
                                                              DataProtectionScope.CurrentUser)
                                       );
                 }
             }
         }
-        public static void EnableSerialization(ITokenCache tokenCache)
+        public void EnableSerialization(ITokenCache tokenCache)
         {
             tokenCache.SetBeforeAccess(BeforeAccessNotification);
             tokenCache.SetAfterAccess(AfterAccessNotification);

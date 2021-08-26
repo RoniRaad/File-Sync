@@ -3,32 +3,35 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Globalization;
 using Microsoft.Identity.Client;
-using Microsoft.Extensions.Options;
+using System.Windows;
 using FileSync.WindowsService.Interfaces;
+using Microsoft.Extensions.Options;
 using FileSync.DomainModel.Models;
 
 namespace FileSync.WindowsService.Services
 {
-    public class AzureAdService : IAuthorizationService
+    public class AzureADService : IAuthorizationService
     {
-        private readonly AzureAdConfig _iDAConfig;
-
+        private readonly AzureAdConfig _azureOptions;
+        private readonly ITokenCacheService _tokenCacheService;
+        private readonly string _authority;
         private readonly string[] _scopes;
         private readonly IPublicClientApplication _app;
         private string AccessToken;
         public bool IsSignedIn { get; set; }
 
-        public AzureAdService(IOptions<AzureAdConfig> iDAConfig)
+        public AzureADService(IOptions<AzureAdConfig> azureOptions, ITokenCacheService tokenCacheService)
         {
-            _iDAConfig = iDAConfig.Value;
-            _scopes = new string[] { _iDAConfig.FileSyncScope };
-
-            _app = PublicClientApplicationBuilder.Create(_iDAConfig.ClientId)
-                .WithAuthority(string.Format(CultureInfo.InvariantCulture, _iDAConfig.AADInstance, _iDAConfig.Tenant))
+            _tokenCacheService = tokenCacheService;
+            _azureOptions = azureOptions.Value;
+            _authority = string.Format(CultureInfo.InvariantCulture, _azureOptions.AADInstance, _azureOptions.Tenant);
+            _scopes = new string[] { _azureOptions.FileSyncScope };
+            _app = PublicClientApplicationBuilder.Create(_azureOptions.ClientId)
+                .WithAuthority(_authority)
                 .WithRedirectUri("http://localhost")
                 .Build();
 
-            TokenCacheHelper.EnableSerialization(_app.UserTokenCache);
+            _tokenCacheService.EnableSerialization(_app.UserTokenCache);
         }
 
         public async Task<string> GetAccessToken()
@@ -60,6 +63,19 @@ namespace FileSync.WindowsService.Services
                 Console.WriteLine(ex.Message);
                 return IsSignedIn;
             }
+        }
+
+        public async Task SignOut()
+        {
+            var accounts = (await _app.GetAccountsAsync()).ToList();
+
+            while (accounts.Any())
+            {
+                await _app.RemoveAsync(accounts.First());
+                accounts = (await _app.GetAccountsAsync()).ToList();
+            }
+
+            IsSignedIn = false;
         }
     }
 }

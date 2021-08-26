@@ -2,7 +2,7 @@
 using FileSync.Application.ViewModels;
 using FileSync.DomainModel.Models;
 using FileSync.Infrastructure.Services;
-using FileSync.UI.Services;
+using FileSync.WindowsService.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Windows;
@@ -32,6 +32,7 @@ namespace FileSync
             services.Configure<AzureAdConfig>(context.Configuration.GetSection("AzureAdConfig"));
             services.AddTransient<IIOService, IOService>();
             services.AddTransient<IFileManagerViewModel, FileManagerViewModel>();
+            services.AddTransient<ITokenCacheService, TokenCacheService>();
             services.AddTransient<ILoginViewModel, LoginViewModel>();
             services.AddSingleton<IAuthorizationService, AzureADService>();
             services.AddSingleton<IAddDirectoryViewModel, AddDirectoryViewModel>();
