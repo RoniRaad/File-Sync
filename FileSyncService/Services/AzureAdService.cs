@@ -31,6 +31,7 @@ namespace FileSync.WindowsService.Services
                 .WithRedirectUri("http://localhost")
                 .Build();
 
+
             _tokenCacheService.EnableSerialization(_app.UserTokenCache);
         }
 

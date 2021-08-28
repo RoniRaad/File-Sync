@@ -1,10 +1,14 @@
 ﻿using FileSync.Application.Interfaces;
 using FileSync.Application.ViewModels;
 using FileSync.DomainModel.Models;
+using FileSync.Infrastructure.Extensions;
+using FileSync.Infrastructure.Models;
 using FileSync.Infrastructure.Services;
 using FileSync.WindowsService.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
+using System.IO;
 using System.Windows;
 
 namespace FileSync
@@ -38,6 +42,7 @@ namespace FileSync
             services.AddSingleton<IAddDirectoryViewModel, AddDirectoryViewModel>();
             services.AddSingleton<MainWindow>();
             services.AddSingleton<FileManager>();
+            services.AddSavePathConfig();
         }
 
         protected override async void OnStartup(StartupEventArgs e)

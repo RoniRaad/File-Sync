@@ -1,4 +1,5 @@
 ﻿using FileSync.DomainModel.Models;
+using FileSync.Infrastructure.Models;
 using FileSync.WindowsService.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -15,23 +16,22 @@ namespace FileSync.WindowsService.Services
 {
     public class FileSyncService
     {
-        private readonly string _savePath = Path.Combine(
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileSync"),
-        "syncDirs.json");
+        private readonly SavePathConfig _savePathConfig; 
         private readonly ILogger _logger;
         private readonly HttpClient _httpClient;
         private readonly AzureAdConfig _azureAdConfig;
         private readonly IAuthorizationService _authorizationService;
-
         private readonly JsonSerializerOptions _options = new()
         {
             PropertyNameCaseInsensitive = true
         };
 
-        public FileSyncService(ILogger<FileSyncService> logger, HttpClient httpClient, IOptions<AzureAdConfig> azureAdConfig, IAuthorizationService authorizationService)
+        public FileSyncService(ILogger<FileSyncService> logger, HttpClient httpClient, IOptions<AzureAdConfig> azureAdConfig, IAuthorizationService authorizationService, IOptions<SavePathConfig>
+            savePathConfig)
         {
             _logger = logger;
             _httpClient = httpClient;
+            _savePathConfig = savePathConfig.Value;
             _azureAdConfig = azureAdConfig.Value;
             _authorizationService = authorizationService;
         }
@@ -93,7 +93,6 @@ namespace FileSync.WindowsService.Services
             string accessToken = await _authorizationService.GetAccessToken();
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-
             var response = await _httpClient.GetAsync($"{url}");
             response.EnsureSuccessStatusCode();
             var responseContent = await response.Content.ReadAsByteArrayAsync();
@@ -125,7 +124,8 @@ namespace FileSync.WindowsService.Services
 
         private async Task<IList<SyncDirectory>> GetSyncDirectories()
         {
-            var fileInfoJson = await File.ReadAllTextAsync(_savePath);
+            var syncDirectoryFilePath = Path.Combine(_savePathConfig.Path, _savePathConfig.SyncDirectoriesFileName);
+            var fileInfoJson = await File.ReadAllTextAsync(syncDirectoryFilePath);
 
             return JsonSerializer.Deserialize<List<SyncDirectory>>(fileInfoJson);
         }

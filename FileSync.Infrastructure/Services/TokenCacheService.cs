@@ -4,6 +4,8 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
+using FileSync.Infrastructure.Models;
+using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;
 
 namespace FileSync
@@ -13,15 +15,22 @@ namespace FileSync
         /// <summary>j
         /// Path to the token cache
         /// </summary>
-        private readonly static string _saveDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileSync");
-        private readonly static string _cacheFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileSync.msalcache.bin");
+        private readonly SavePathConfig _savePathConfig;
+        private readonly string _cacheFilePath;
 
 
-        private static readonly object FileLock = new object();
+        private readonly object _fileLock;
+
+        public TokenCacheService(IOptions<SavePathConfig> savePathConfig)
+        {
+            _savePathConfig = savePathConfig.Value;
+            _cacheFilePath = Path.Combine(_savePathConfig.Path, _savePathConfig.TokenCacheFileName);
+            _fileLock = new object();
+        }
 
         private void BeforeAccessNotification(TokenCacheNotificationArgs args)
         {
-            lock (FileLock)
+            lock (_fileLock)
             {
                 args.TokenCache.DeserializeMsalV3(File.Exists(_cacheFilePath)
                     ? ProtectedData.Unprotect(File.ReadAllBytes(_cacheFilePath),
@@ -36,7 +45,7 @@ namespace FileSync
             // if the access operation resulted in a cache update
             if (args.HasStateChanged)
             {
-                lock (FileLock)
+                lock (_fileLock)
                 {
                     // reflect changes in the persistent store
                     File.WriteAllBytes(_cacheFilePath,
