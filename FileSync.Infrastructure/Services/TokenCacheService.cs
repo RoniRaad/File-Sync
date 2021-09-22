@@ -4,24 +4,33 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
+using FileSync.Infrastructure.Models;
+using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;
 
 namespace FileSync
 {
-    public static class TokenCacheHelper
-    { 
+    public class TokenCacheService : ITokenCacheService
+    {
         /// <summary>j
         /// Path to the token cache
         /// </summary>
-        private static readonly string _saveDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileSync");
-        private static readonly string _cacheFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileSync.msalcache.bin");
+        private readonly SavePathConfig _savePathConfig;
+        private readonly string _cacheFilePath;
 
 
-        private static readonly object FileLock = new object();
+        private readonly object _fileLock;
 
-        private static void BeforeAccessNotification(TokenCacheNotificationArgs args)
+        public TokenCacheService(IOptions<SavePathConfig> savePathConfig)
         {
-            lock (FileLock)
+            _savePathConfig = savePathConfig.Value;
+            _cacheFilePath = Path.Combine(_savePathConfig.Path, _savePathConfig.TokenCacheFileName);
+            _fileLock = new object();
+        }
+
+        private void BeforeAccessNotification(TokenCacheNotificationArgs args)
+        {
+            lock (_fileLock)
             {
                 args.TokenCache.DeserializeMsalV3(File.Exists(_cacheFilePath)
                     ? ProtectedData.Unprotect(File.ReadAllBytes(_cacheFilePath),
@@ -31,23 +40,23 @@ namespace FileSync
             }
         }
 
-        private static void AfterAccessNotification(TokenCacheNotificationArgs args)
+        private void AfterAccessNotification(TokenCacheNotificationArgs args)
         {
             // if the access operation resulted in a cache update
             if (args.HasStateChanged)
             {
-                lock (FileLock)
+                lock (_fileLock)
                 {
                     // reflect changes in the persistent store
                     File.WriteAllBytes(_cacheFilePath,
-                                       ProtectedData.Protect(args.TokenCache.SerializeMsalV3(), 
-                                                             null, 
+                                       ProtectedData.Protect(args.TokenCache.SerializeMsalV3(),
+                                                             null,
                                                              DataProtectionScope.CurrentUser)
                                       );
                 }
             }
         }
-        public static void EnableSerialization(ITokenCache tokenCache)
+        public void EnableSerialization(ITokenCache tokenCache)
         {
             tokenCache.SetBeforeAccess(BeforeAccessNotification);
             tokenCache.SetAfterAccess(AfterAccessNotification);

@@ -1,20 +1,13 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Microsoft.Identity.Web.Resource;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.AspNetCore.Http;
+﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using System.Threading;
-using System.Diagnostics;
-using System.Text;
-using System.IO;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity.Web.Resource;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
 using Azure.Storage.Blobs;
-using System.Runtime.InteropServices.ComTypes;
-using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using Azure.Storage.Blobs.Models;
@@ -22,6 +15,9 @@ using FileSync.DomainModel.Models;
 using Microsoft.AspNetCore.StaticFiles;
 using FileSync.API.Models;
 using Microsoft.Extensions.Options;
+using System.Security.Claims;
+using Microsoft.Extensions.Logging;
+using FileSync.API.Extensions;
 
 namespace FileSync.API.Controllers
 {
@@ -32,11 +28,14 @@ namespace FileSync.API.Controllers
     [RequiredScope("access_as_user")]
     public class FileSyncStorageController : ControllerBase
     {
+        private readonly ILogger<FileSyncStorageController> _logger;
         private readonly StorageAccountConfig _storageAccountConfig;
         private readonly BlobServiceClient _blobServiceClient;
 
-        public FileSyncStorageController(IOptions<StorageAccountConfig> storageAccountConfig)
+        public FileSyncStorageController(ILogger<FileSyncStorageController> logger, 
+            IOptions<StorageAccountConfig> storageAccountConfig)
         {
+            _logger = logger;
             _storageAccountConfig = storageAccountConfig.Value;
             _blobServiceClient = new BlobServiceClient(_storageAccountConfig.StorageAccountConnectionString);
         }
@@ -49,104 +48,133 @@ namespace FileSync.API.Controllers
          IFormCollection parameters,
          CancellationToken cancellationToken)
         {
-            BlobContainerClient blobContainer;
-            FSFileInfo fileInfo = JsonSerializer.Deserialize<FSFileInfo>(parameters["FSFileInfo"]);
-            System.Security.Claims.ClaimsPrincipal currentUser = User;
-            var tags = new Dictionary<string, string>();
+            try
+            {
+                _logger.LogInformation("Receiving incoming file from client...");
+                BlobContainerClient blobContainer;
+                FSFileInfo fileInfo = JsonSerializer.Deserialize<FSFileInfo>(parameters["FSFileInfo"]);
+                _logger.LogInformation("Deserialized file info...");
 
-            tags.Add("LastModifiedTime", fileInfo.ModifiedTime.Ticks.ToString());
-            // Because a container can only have an lowercase alpha-numeric name with 63 characters maximum we truncate the hash and set all characters to their lowercase form.
-            string name = GetHashString(currentUser.Identity.Name).Substring(0, 63).ToLower();
+                var currentUser = User;
+                var tags = new Dictionary<string, string>();
 
-            blobContainer = _blobServiceClient.GetBlobContainerClient(name);
+                tags.Add("LastModifiedTime", fileInfo.ModifiedTime.Ticks.ToString());
+                string name = currentUser.Identity.Name.GetBlobContainerUID();
 
-            if (!await blobContainer.ExistsAsync())
-                blobContainer = await _blobServiceClient.CreateBlobContainerAsync(name);
+                blobContainer = _blobServiceClient.GetBlobContainerClient(name);
 
-            var blobClient = blobContainer.GetBlobClient(Path.Combine(fileInfo.Path, Path.GetFileName(file.FileName)));
+                if (!await blobContainer.ExistsAsync())
+                    blobContainer = await _blobServiceClient.CreateBlobContainerAsync(name);
 
-            await blobClient.UploadAsync(file.OpenReadStream(), overwrite: true);
-            blobClient.SetTags(tags);
+                _logger.LogInformation("Created BlobContainer...");
 
-            return Ok();
+                var blobClient = blobContainer.GetBlobClient(Path.Combine(fileInfo.Path, Path.GetFileName(file.FileName)));
+
+                await blobClient.UploadAsync(file.OpenReadStream(), overwrite: true);
+                _logger.LogInformation("File uploaded successfully to storage account...");
+
+                blobClient.SetTags(tags);
+                _logger.LogInformation("Successfully applied new tags to file!");
+
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
+                _logger.LogError(e.InnerException?.Message);
+                _logger.LogError(e.StackTrace);
+                throw;
+            }
         }
 
         [HttpGet("getfile", Name = "getfile")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetFile(string filePath)
         {
-            BlobContainerClient blobContainer;
-            System.Security.Claims.ClaimsPrincipal currentUser = User;
-            string sanitizedFilePath = SanitizeFolderName(filePath);
-            string name = GetHashString(currentUser.Identity.Name).Substring(0, 63).ToLower();
-            blobContainer = _blobServiceClient.GetBlobContainerClient(name);
-
-            if (!await blobContainer.ExistsAsync())
-                blobContainer = await _blobServiceClient.CreateBlobContainerAsync(name);
-
-            var blobClient = blobContainer.GetBlobClient(filePath);
-
-            if (!await blobClient.ExistsAsync())
-                return BadRequest();
-
-            var provider = new FileExtensionContentTypeProvider();
-            if (!provider.TryGetContentType(sanitizedFilePath, out var contentType))
+            try
             {
-                contentType = "application/octet-stream";
-            }
+                _logger.LogInformation("Receiving a file request from client...");
 
-            var bytes = await blobClient.OpenReadAsync();
-            return File(bytes, contentType);
+                BlobContainerClient blobContainer;
+                ClaimsPrincipal currentUser = User;
+                string sanitizedFilePath = filePath.SanitizeDirectory();
+                string name = currentUser.Identity.Name.GetBlobContainerUID();
+
+                blobContainer = _blobServiceClient.GetBlobContainerClient(name);
+
+                if (!await blobContainer.ExistsAsync())
+                    blobContainer = await _blobServiceClient.CreateBlobContainerAsync(name);
+
+                _logger.LogInformation("Blob container created successfully...");
+
+                var blobClient = blobContainer.GetBlobClient(filePath);
+
+                if (!await blobClient.ExistsAsync())
+                    return BadRequest();
+
+                _logger.LogInformation("Blob client created successfully and file is found in storage account...");
+
+                var provider = new FileExtensionContentTypeProvider();
+                if (!provider.TryGetContentType(sanitizedFilePath, out var contentType))
+                {
+                    contentType = "application/octet-stream";
+                }
+                _logger.LogInformation("File headers set successfully...");
+
+                var bytes = await blobClient.OpenReadAsync();
+                _logger.LogInformation("File read from storage account successfully!");
+
+                return File(bytes, contentType);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
+                _logger.LogError(e.InnerException?.Message);
+                _logger.LogError(e.StackTrace);
+                throw;
+            }
         }
 
         [HttpGet("getmodifiedtimes", Name = "getmodifiedtimes")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetModifiedTimes()
         {
-            BlobContainerClient blobContainer;
-
-            System.Security.Claims.ClaimsPrincipal currentUser = User;
-            IDictionary<string ,FSFileInfo> fileInfo = new Dictionary<string, FSFileInfo>();
-            string name = GetHashString(currentUser.Identity.Name).Substring(0, 63).ToLower();
-            blobContainer = _blobServiceClient.GetBlobContainerClient(name);
-
-            if (!await blobContainer.ExistsAsync())
-                blobContainer = await _blobServiceClient.CreateBlobContainerAsync(name);
-
-            await foreach (BlobItem blobItem in blobContainer.GetBlobsAsync(traits: BlobTraits.Tags))
+            try
             {
-                fileInfo.Add(blobItem.Name ,new FSFileInfo()
+                _logger.LogInformation("Receiving a file last modified attribute request...");
+
+                BlobContainerClient blobContainer;
+
+                ClaimsPrincipal currentUser = User;
+                IDictionary<string, FSFileInfo> fileInfo = new Dictionary<string, FSFileInfo>();
+                string name = currentUser.Identity.Name.GetBlobContainerUID();
+
+                blobContainer = _blobServiceClient.GetBlobContainerClient(name);
+
+                if (!await blobContainer.ExistsAsync())
+                    blobContainer = await _blobServiceClient.CreateBlobContainerAsync(name);
+                _logger.LogInformation("Blob container created successfully...");
+
+                await foreach (var blobItem in blobContainer.GetBlobsAsync(traits: BlobTraits.Tags))
                 {
-                    FileName = Path.GetFileName(blobItem.Name),
-                    Path = Path.GetDirectoryName(blobItem.Name),
-                    ModifiedTime = new DateTime(long.Parse(blobItem.Tags["LastModifiedTime"]))
-                });
+                    fileInfo.Add(blobItem.Name, new FSFileInfo()
+                    {
+                        FileName = Path.GetFileName(blobItem.Name),
+                        Path = Path.GetDirectoryName(blobItem.Name),
+                        ModifiedTime = new DateTime(long.Parse(blobItem.Tags["LastModifiedTime"]))
+                    });
+                }
+                _logger.LogInformation("Successfully read attribute from all files in clients container!");
+
+                return Ok(JsonSerializer.Serialize(fileInfo));
             }
-
-            return Ok(JsonSerializer.Serialize(fileInfo));
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
+                _logger.LogError(e.InnerException?.Message);
+                _logger.LogError(e.StackTrace);
+                throw;
+            }
         }
-
-        public static byte[] GetHash(string inputString)
-        {
-            using (HashAlgorithm algorithm = SHA256.Create())
-                return algorithm.ComputeHash(Encoding.UTF8.GetBytes(inputString));
-        }
-
-        public static string GetHashString(string inputString)
-        {
-            StringBuilder sb = new StringBuilder();
-            foreach (byte b in GetHash(inputString))
-                sb.Append(b.ToString("X2"));
-
-            return sb.ToString();
-        }
-
-        public static string SanitizeFolderName(string name)
-        {
-            string regexSearch = new string(Path.GetInvalidPathChars());
-            var r = new Regex(string.Format("[{0}]", Regex.Escape(regexSearch)));
-            return r.Replace(name, "");
-        }
-
     }
 }
